@@ -1,5 +1,13 @@
 const express = require("express");
 const app = express();
+require("dotenv").config();
+const pg = require("pg");
+
+const { Pool } = pg;
+
+const pool = new Pool({
+  connectionString: process.env.POSTGRES_URL,
+});
 
 // Middleware to enable CORS
 app.use((req, res, next) => {
@@ -31,15 +39,6 @@ app.post("/send_data", (req, res) => {
   const objects = req.body;
   e.updateData(objects);
   res.json({ message: "Data received successfully" });
-});
-
-require("dotenv").config();
-const pg = require("pg");
-
-const { Pool } = pg;
-
-const pool = new Pool({
-  connectionString: process.env.POSTGRES_URL,
 });
 
 const e = (() => {
