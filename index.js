@@ -22,14 +22,23 @@ app.use((req, res, next) => {
 
 // Define routes
 app.get("/", (req, res) => {
-  res.send("Hello World");
-});
+  // res.send("Hello World");
 
-// app.get("/get_data", (req, res) => {
-//   checkDatabase().then((result) => {
-//     res.send(result);
-//   });
-// });
+  getTable("menu").then((e) => {
+    const obj = e[0].prawn_products;
+    const keys = Object.keys(obj);
+    const values = Object.values(obj);
+
+    const types = [];
+    values.forEach((o) => {
+      arr = Object.keys(o);
+      arr.forEach((t) => {
+        if (!types.includes("minerals")) types.push(t);
+      });
+    });
+    res.send(types);
+  });
+});
 
 app.get("/get_data", async (req, res) => {
   try {
@@ -51,40 +60,40 @@ app.post("/send_data", (req, res) => {
   res.json({ message: "Data received successfully" });
 });
 
-//   function addTable(TableQuery) {
-//     // Execute the query to create the table
-//     pool.query(TableQuery, (err, result) => {
-//       if (err) {
-//         console.error("Error executing CREATE TABLE query:", err);
-//       } else {
-//         console.log("Table created successfully");
-//       }
-//     });
-//   }
+// function addTable(TableQuery) {
+//   // Execute the query to create the table
+//   pool.query(TableQuery, (err, result) => {
+//     if (err) {
+//       console.error("Error executing CREATE TABLE query:", err);
+//     } else {
+//       console.log("Table created successfully");
+//     }
+//   });
+// }
 
-//   async function updateData(objects) {
-//     await clearTable();
+// async function updateData(objects) {
+//   await clearTable();
 
-//     // Define the SQL statement for the insert query
-//     const insertQuery = `INSERT INTO menu (prawns_menu, poultry_menu, prawn_products, poultry_products)
-//                             VALUES ($1, $2, $3, $4)`;
+//   // Define the SQL statement for the insert query
+//   const insertQuery = `INSERT INTO menu (prawns_menu, poultry_menu, prawn_products, poultry_products)
+//                           VALUES ($1, $2, $3, $4)`;
 
-//     // Execute the insert query for each object
-//     const values = [
-//       objects.prawns_menu,
-//       objects.poultry_menu,
-//       objects.prawn_products,
-//       objects.poultry_products,
-//     ];
+//   // Execute the insert query for each object
+//   const values = [
+//     objects.prawns_menu,
+//     objects.poultry_menu,
+//     objects.prawn_products,
+//     objects.poultry_products,
+//   ];
 
-//     pool.query(insertQuery, values, (err, result) => {
-//       if (err) {
-//         console.error("Error inserting data:", err);
-//       } else {
-//         console.log("Data inserted successfully");
-//       }
-//     });
-//   }
+//   pool.query(insertQuery, values, (err, result) => {
+//     if (err) {
+//       console.error("Error inserting data:", err);
+//     } else {
+//       console.log("Data inserted successfully");
+//     }
+//   });
+// }
 
 //   function clearTable() {
 //     const truncateQuery = `TRUNCATE TABLE menu`;
@@ -160,30 +169,122 @@ app.post("/send_data", (req, res) => {
 //   });
 // }
 
-// e.getTable("menu").then((e) => {
-//   const obj = e[0].prawn_products;
-//   const keys = Object.keys(obj);
-//   const values = Object.values(obj);
+function addTable(TableQuery) {
+  return new Promise((resolve, reject) => {
+    // Execute the query to create the table
+    pool.query(TableQuery, (err, result) => {
+      if (err) {
+        console.error("Error executing CREATE TABLE query:", err);
+        reject(err);
+      } else {
+        console.log("Table created successfully");
+        resolve(result);
+      }
+    });
+  });
+}
 
-//   const types = [];
-//   values.forEach((o) => {
-//     arr = Object.keys(o);
-//     arr.forEach((t) => {
-//       if (!types.includes("minerals")) types.push(t);
-//     });
-//   });
-//   console.log(types);
-// });
+async function getTable(table_name) {
+  try {
+    // Execute the SQL query to select all rows from the menu_names table
+    const result = await pool.query(`SELECT * FROM ${table_name}`);
 
-// e.addTable(`
-//  CREATE TABLE IF NOT EXISTS menu (
-//    prawns_menu JSONB,
-//    poultry_menu JSONB,
-//    prawn_products JSONB,
-//    poultry_products JSONB
-//  );
-//  `);
-// e.dropTable("DROP TABLE menu");
+    // Return the result.rows array, which contains all rows from the table
+    return result.rows;
+  } catch (error) {
+    // Handle any errors
+    console.error("Error selecting menus:", error);
+    throw error; // Re-throw the error to be handled by the caller
+  }
+}
+
+function dropTable(TableQuery) {
+  // Execute the query to drop the table
+  pool.query(TableQuery, (err, result) => {
+    if (err) {
+      console.error("Error executing DROP TABLE query:", err);
+    } else {
+      console.log("Table dropped successfully");
+    }
+  });
+}
+
+async function updateData(objects) {
+  try {
+    // Clear the table
+    await clearTable();
+
+    // Define the SQL statement for the insert query
+    const insertQuery = `
+      INSERT INTO menu (prawns_menu, poultry_menu, prawn_products, poultry_products)
+      VALUES ($1, $2, $3, $4)
+    `;
+
+    // Execute the insert query for each object
+    const values = [
+      objects.prawns_menu,
+      objects.poultry_menu,
+      objects.prawn_products,
+      objects.poultry_products,
+    ];
+
+    // Insert data into the table
+    const result = await pool.query(insertQuery, values);
+    console.log("Data inserted successfully:", result);
+  } catch (error) {
+    console.error("Error inserting data:", error);
+    throw error; // Re-throw the error to be handled by the caller
+  }
+}
+
+function clearTable() {
+  return new Promise((resolve, reject) => {
+    const truncateQuery = `TRUNCATE TABLE menu`;
+
+    // Execute the query to clear the table
+    pool.query(truncateQuery, (err, result) => {
+      if (err) {
+        console.error("Error truncating table:", err);
+        reject(err);
+      } else {
+        console.log("Table data cleared successfully");
+        resolve(result);
+      }
+    });
+  });
+}
+
+function dropTable(TableQuery) {
+  return new Promise((resolve, reject) => {
+    // Execute the query to drop the table
+    pool.query(TableQuery, (err, result) => {
+      if (err) {
+        console.error("Error executing DROP TABLE query:", err);
+        reject(err);
+      } else {
+        console.log("Table dropped successfully");
+        resolve(result);
+      }
+    });
+  });
+}
+
+function checkTable(TableQuery) {
+  return new Promise((resolve, reject) => {
+    // Execute the query to check if the table exists
+    pool.query(TableQuery, (err, result) => {
+      if (err) {
+        console.error("Error executing query:", err);
+        reject(err);
+      } else {
+        // Process the result here
+        const tableExists = result.rows[0].exists;
+        console.log(`Table exists:`, tableExists);
+        resolve(tableExists);
+      }
+    });
+  });
+}
 
 function checkDatabase() {
   return new Promise((resolve, reject) => {
@@ -212,6 +313,16 @@ function checkDatabase() {
     });
   });
 }
+
+// e.addTable(`
+//  CREATE TABLE IF NOT EXISTS menu (
+//    prawns_menu JSONB,
+//    poultry_menu JSONB,
+//    prawn_products JSONB,
+//    poultry_products JSONB
+//  );
+//  `);
+// e.dropTable("DROP TABLE menu");
 
 process.on("exit", () => {
   pool.end();
