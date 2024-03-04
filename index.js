@@ -40,8 +40,7 @@ app.use(express.json());
 app.post("/send_data", (req, res) => {
   // Access the JSON data sent from the client
   const objects = req.body;
-  e.updateData(objects);
-  console.log(objects);
+  updateData(objects);
   res.json({ message: "Data received successfully" });
 });
 
