@@ -31,6 +31,15 @@ app.get("/", (req, res) => {
 //   });
 // });
 
+app.get("/get_data", async (req, res) => {
+  try {
+    const result = await checkDatabase();
+    res.send(result);
+  } catch (error) {
+    res.status(500).send("Error occurred while checking database.");
+  }
+});
+
 // Middleware to parse JSON bodies
 app.use(express.json());
 
