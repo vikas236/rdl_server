@@ -29,7 +29,7 @@ app.get("/get_data", (req, res) => {
   // e.getTable("menu").then((result) => {
   // res.send(result);
   // });
-  res.send("this is a message");
+  res.send("postgres url" + process.env.POSTGRES_URL);
 });
 
 // Middleware to parse JSON bodies
