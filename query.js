@@ -133,20 +133,20 @@ const e = (() => {
   };
 })();
 
-e.getTable("menu").then((e) => {
-  const obj = e[0].prawn_products;
-  const keys = Object.keys(obj);
-  const values = Object.values(obj);
+// e.getTable("menu").then((e) => {
+//   const obj = e[0].prawn_products;
+//   const keys = Object.keys(obj);
+//   const values = Object.values(obj);
 
-  const types = [];
-  values.forEach((o) => {
-    arr = Object.keys(o);
-    arr.forEach((t) => {
-      if (!types.includes("minerals")) types.push(t);
-    });
-  });
-  console.log(types);
-});
+//   const types = [];
+//   values.forEach((o) => {
+//     arr = Object.keys(o);
+//     arr.forEach((t) => {
+//       if (!types.includes("minerals")) types.push(t);
+//     });
+//   });
+//   console.log(types);
+// });
 
 // e.addTable(`
 //  CREATE TABLE IF NOT EXISTS menu (
