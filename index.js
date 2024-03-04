@@ -2,6 +2,7 @@ const express = require("express");
 const app = express();
 require("dotenv").config();
 const pg = require("pg");
+const { e } = require("./query"); // Import the 'e' object from query.js
 
 const { Pool } = pg;
 
