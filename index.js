@@ -22,27 +22,12 @@ app.use((req, res, next) => {
 
 // Define routes
 app.get("/", (req, res) => {
-  // res.send("Hello World");
-
-  getTable("menu").then((e) => {
-    const obj = e[0].prawn_products;
-    const keys = Object.keys(obj);
-    const values = Object.values(obj);
-
-    const types = [];
-    values.forEach((o) => {
-      arr = Object.keys(o);
-      arr.forEach((t) => {
-        if (!types.includes("minerals")) types.push(t);
-      });
-    });
-    res.send(types);
-  });
+  res.send("Express js on Vercel");
 });
 
 app.get("/get_data", async (req, res) => {
   try {
-    const result = await checkDatabase();
+    const result = await getTable("menu");
     res.send(result);
   } catch (error) {
     res.status(500).send("Error occurred while checking database.");
@@ -314,6 +299,20 @@ function checkDatabase() {
   });
 }
 
+// getTable("menu").then((e) => {
+//   const obj = e[0].prawn_products;
+//   const keys = Object.keys(obj);
+//   const values = Object.values(obj);
+
+//   const types = [];
+//   values.forEach((o) => {
+//     arr = Object.keys(o);
+//     arr.forEach((t) => {
+//       if (!types.includes("minerals")) types.push(t);
+//     });
+//   });
+//   res.send(types);
+// });
 // e.addTable(`
 //  CREATE TABLE IF NOT EXISTS menu (
 //    prawns_menu JSONB,
