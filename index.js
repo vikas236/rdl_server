@@ -26,10 +26,9 @@ app.get("/", (req, res) => {
 });
 
 app.get("/get_data", (req, res) => {
-  // e.getTable("menu").then((result) => {
-  // res.send(result);
-  // });
-  res.send("postgres url" + process.env.POSTGRES_URL);
+  checkDatabase().then((result) => {
+    res.send(result);
+  });
 });
 
 // Middleware to parse JSON bodies
@@ -43,7 +42,6 @@ app.post("/send_data", (req, res) => {
   res.json({ message: "Data received successfully" });
 });
 
-// const e = (() => {
 //   function addTable(TableQuery) {
 //     // Execute the query to create the table
 //     pool.query(TableQuery, (err, result) => {
@@ -130,44 +128,28 @@ app.post("/send_data", (req, res) => {
 //     });
 //   }
 
-//   function checkDatabase() {
-//     // Construct the SQL query to count the number of tables in the public schema
-//     const countTablesQuery = `
-//   SELECT COUNT(*)
-//   FROM information_schema.tables
-//   WHERE table_schema = 'public';`;
+function checkDatabase() {
+  // Construct the SQL query to count the number of tables in the public schema
+  const countTablesQuery = `
+  SELECT COUNT(*)
+  FROM information_schema.tables
+  WHERE table_schema = 'public';`;
 
-//     // Execute the query to count the number of tables
-//     pool.query(countTablesQuery, (err, result) => {
-//       if (err) {
-//         console.error("Error executing query:", err);
-//       } else {
-//         // Process the result here
-//         tableCount = parseInt(result.rows[0].count);
-//         if (tableCount === 0) {
-//           console.log("The database is empty.");
-//         } else {
-//           console.log(
-//             "The database is not empty. It contains",
-//             tableCount,
-//             "tables."
-//           );
-//         }
-//       }
-//       console.log("table count: " + tableCount);
-//     });
-//   }
-
-//   return {
-//     addTable,
-//     getTable,
-//     clearTable,
-//     updateData,
-//     dropTable,
-//     checkTable,
-//     checkDatabase,
-//   };
-// })();
+  // Execute the query to count the number of tables
+  pool.query(countTablesQuery, (err, result) => {
+    if (err) {
+      console.error("Error executing query:", err);
+    } else {
+      // Process the result here
+      tableCount = parseInt(result.rows[0].count);
+      if (tableCount === 0) {
+        return "The database is empty.";
+      } else {
+        return "The database is not empty. It contains", tableCount, "tables.";
+      }
+    }
+  });
+}
 
 // e.getTable("menu").then((e) => {
 //   const obj = e[0].prawn_products;
