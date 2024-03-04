@@ -25,11 +25,11 @@ app.get("/", (req, res) => {
   res.send("Hello World");
 });
 
-app.get("/get_data", (req, res) => {
-  checkDatabase().then((result) => {
-    res.send(result);
-  });
-});
+// app.get("/get_data", (req, res) => {
+//   checkDatabase().then((result) => {
+//     res.send(result);
+//   });
+// });
 
 // Middleware to parse JSON bodies
 app.use(express.json());
@@ -128,28 +128,28 @@ app.post("/send_data", (req, res) => {
 //     });
 //   }
 
-function checkDatabase() {
-  // Construct the SQL query to count the number of tables in the public schema
-  const countTablesQuery = `
-  SELECT COUNT(*)
-  FROM information_schema.tables
-  WHERE table_schema = 'public';`;
+// function checkDatabase() {
+//   // Construct the SQL query to count the number of tables in the public schema
+//   const countTablesQuery = `
+//   SELECT COUNT(*)
+//   FROM information_schema.tables
+//   WHERE table_schema = 'public';`;
 
-  // Execute the query to count the number of tables
-  pool.query(countTablesQuery, (err, result) => {
-    if (err) {
-      console.error("Error executing query:", err);
-    } else {
-      // Process the result here
-      tableCount = parseInt(result.rows[0].count);
-      if (tableCount === 0) {
-        return "The database is empty.";
-      } else {
-        return "The database is not empty. It contains", tableCount, "tables.";
-      }
-    }
-  });
-}
+//   // Execute the query to count the number of tables
+//   pool.query(countTablesQuery, (err, result) => {
+//     if (err) {
+//       console.error("Error executing query:", err);
+//     } else {
+//       // Process the result here
+//       tableCount = parseInt(result.rows[0].count);
+//       if (tableCount === 0) {
+//         return "The database is empty.";
+//       } else {
+//         return "The database is not empty. It contains", tableCount, "tables.";
+//       }
+//     }
+//   });
+// }
 
 // e.getTable("menu").then((e) => {
 //   const obj = e[0].prawn_products;
@@ -175,6 +175,34 @@ function checkDatabase() {
 //  );
 //  `);
 // e.dropTable("DROP TABLE menu");
+
+function checkDatabase() {
+  return new Promise((resolve, reject) => {
+    // Construct the SQL query to count the number of tables in the public schema
+    const countTablesQuery = `
+    SELECT COUNT(*)
+    FROM information_schema.tables
+    WHERE table_schema = 'public';`;
+
+    // Execute the query to count the number of tables
+    pool.query(countTablesQuery, (err, result) => {
+      if (err) {
+        console.error("Error executing query:", err);
+        reject(err);
+      } else {
+        // Process the result here
+        const tableCount = parseInt(result.rows[0].count);
+        if (tableCount === 0) {
+          resolve("The database is empty.");
+        } else {
+          resolve(
+            `The database is not empty. It contains ${tableCount} tables.`
+          );
+        }
+      }
+    });
+  });
+}
 
 process.on("exit", () => {
   pool.end();
