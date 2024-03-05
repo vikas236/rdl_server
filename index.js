@@ -12,7 +12,7 @@ const pool = new Pool({
 // Middleware to enable CORS
 app.use((req, res, next) => {
   // Set the Access-Control-Allow-Origin header to allow requests from any origin
-  res.setHeader("Access-Control-Allow-Origin", "https://reddydrugs.org/");
+  res.setHeader("Access-Control-Allow-Origin", "*");
   // Set other CORS headers as needed
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
