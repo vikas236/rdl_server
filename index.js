@@ -34,6 +34,15 @@ app.get("/get_data", async (req, res) => {
   }
 });
 
+app.get("/get_cred", async (req, res) => {
+  try {
+    const result = await getTable("login_credentials");
+    res.send(result);
+  } catch (error) {
+    res.status(500).send("Error occurred while checking database.");
+  }
+});
+
 // Middleware to parse JSON bodies
 app.use(express.json());
 
