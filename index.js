@@ -12,7 +12,7 @@ const pool = new Pool({
 // Middleware to enable CORS
 app.use((req, res, next) => {
   // Set the Access-Control-Allow-Origin header to allow requests from any origin
-  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Origin", "https://reddydrugs.org/");
   // Set other CORS headers as needed
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
@@ -34,10 +34,10 @@ app.get("/get_data", async (req, res) => {
   }
 });
 
-// app.get("/get_data", async (req, res) => {
+// app.get("/get_cred", async (req, res) => {
 //   try {
-//     const result = await getTable("menu");
-//     res.send(result);
+//     const cred = await getTable("login_credentials");
+//     res.send(cred);
 //   } catch (error) {
 //     res.status(500).send("Error occurred while checking database.");
 //   }
