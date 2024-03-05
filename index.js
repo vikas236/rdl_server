@@ -34,7 +34,8 @@ app.get("/get_data", async (req, res) => {
   }
 });
 
-app.get("/get_cred", async (req, res) => {
+// Route for accessing credentials, protected by basic authentication
+app.get("/get_cred", auth, async (req, res) => {
   try {
     const result = await getTable("login_credentials");
     res.send(result);
