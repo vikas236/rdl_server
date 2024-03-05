@@ -53,6 +53,13 @@ app.post("/send_data", (req, res) => {
   res.json({ message: "Data received successfully" });
 });
 
+app.post("/send_cred", (req, res) => {
+  // Access the JSON data sent from the client
+  const objects = req.body;
+  updateData(objects);
+  res.json({ message: "Data received successfully" });
+});
+
 function addTable(TableQuery) {
   return new Promise((resolve, reject) => {
     // Execute the query to create the table
