@@ -11,7 +11,7 @@ const pool = new Pool({
 
 // Middleware to enable CORS
 app.use((req, res, next) => {
-  // Set the Access-Control-Allow-Origin header to allow requests from your frontend domain
+  // Set the Access-Control-Allow-Origin header to allow requests from any origin
   res.setHeader("Access-Control-Allow-Origin", "https://reddydrugs.org/");
   // Set other CORS headers as needed
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
@@ -34,14 +34,14 @@ app.get("/get_data", async (req, res) => {
   }
 });
 
-// app.get("/get_cred", async (req, res) => {
-//   try {
-//     const cred = await getTable("login_credentials");
-//     res.send(cred);
-//   } catch (error) {
-//     res.status(500).send("Error occurred while checking database.");
-//   }
-// });
+app.get("/get_cred", async (req, res) => {
+  try {
+    const cred = await getTable("login_credentials");
+    res.send(cred);
+  } catch (error) {
+    res.status(500).send("Error occurred while checking database.");
+  }
+});
 
 // Middleware to parse JSON bodies
 app.use(express.json());
