@@ -46,6 +46,7 @@ app.get("/get_cred", async (req, res) => {
 // Middleware to parse JSON bodies
 app.use(express.json());
 
+// Post requests
 app.post("/send_data", (req, res) => {
   // Access the JSON data sent from the client
   const objects = req.body;
@@ -60,6 +61,7 @@ app.post("/send_cred", (req, res) => {
   res.json({ message: "Data received successfully" });
 });
 
+// Functions to access database
 function addTable(TableQuery) {
   return new Promise((resolve, reject) => {
     // Execute the query to create the table
