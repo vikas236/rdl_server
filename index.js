@@ -1,6 +1,9 @@
 const express = require("express");
 const app = express();
 require("dotenv").config();
+const multer = require("multer");
+const path = require("path");
+const fs = require("fs");
 const pg = require("pg");
 
 const { Pool } = pg;
@@ -20,11 +23,45 @@ app.use((req, res, next) => {
   next();
 });
 
-// Define routes
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    // Determine the folder dynamically based on file type or any other criteria
+    const folderName = determineFolderName(file.originalname);
+    const uploadPath = path.join(__dirname, "uploads", folderName);
+
+    // Create the directory if it doesn't exist
+    fs.mkdirSync(uploadPath, { recursive: true }); // Create directory recursively
+    cb(null, uploadPath);
+  },
+  filename: function (req, file, cb) {
+    cb(null, file.originalname); // Use the original filename
+  },
+});
+
+function determineFolderName(filename) {
+  const types = ["slide", "gallery"];
+  let result = "product";
+
+  types.forEach((t) => {
+    if (filename.slice(0, t.length) == t) result = t;
+  });
+
+  return result;
+}
+
+const upload = multer({ storage: storage });
+let imageFiles = [];
+// console.log(upload);
+
+// Serve static files from the 'uploads' directory
+app.use(express.static("uploads"));
+
+// Default route
 app.get("/", (req, res) => {
   res.send("Express js on Vercel");
 });
 
+// get Products data
 app.get("/get_data", async (req, res) => {
   try {
     const result = await getTable("menu");
@@ -34,6 +71,7 @@ app.get("/get_data", async (req, res) => {
   }
 });
 
+// get credentials for admin login
 app.get("/get_cred", async (req, res) => {
   try {
     const cred = await getTable("login_credentials");
@@ -43,10 +81,16 @@ app.get("/get_cred", async (req, res) => {
   }
 });
 
+// get images
+app.get("/images/:imageName", (req, res) => {
+  const imageName = req.params.imageName;
+  res.sendFile(`${__dirname}/uploads/${imageName}`);
+});
+
 // Middleware to parse JSON bodies
 app.use(express.json());
 
-// Post requests
+// Recieve products data
 app.post("/send_data", (req, res) => {
   // Access the JSON data sent from the client
   const objects = req.body;
@@ -54,12 +98,64 @@ app.post("/send_data", (req, res) => {
   res.json({ message: "Data received successfully" });
 });
 
+// upload credentials for admin login
 app.post("/send_cred", (req, res) => {
   // Access the JSON data sent from the client
   const objects = req.body;
   updateData(objects);
   res.json({ message: "Data received successfully" });
 });
+
+// Route to handle image upload
+app.post("/upload", upload.single("image"), (req, res) => {
+  if (!req.file) {
+    console.log("hi");
+    return res.status(400).json({ error: "No image uploaded" });
+  } else if (imageFiles.includes(req.file.filename)) {
+    return res.json({ message: "file already exists" });
+  }
+  res.json({ message: "Image uploaded successfully" });
+});
+
+// Route to handle deletion of images
+app.delete("/images/:filename", (req, res) => {
+  const filename = req.params.filename;
+  const uploadDirectory = `uploads/${determineFolderName(filename)}`;
+  const filePath = path.join(uploadDirectory, filename);
+
+  // Check if the file exists
+  if (fs.existsSync(filePath)) {
+    // Delete the file
+    fs.unlink(filePath, (err) => {
+      if (err) {
+        console.error("Error deleting image:", err);
+        res.status(500).json({ error: "Failed to delete image" });
+      } else {
+        console.log("Image deleted successfully");
+        res.json({ message: "Image deleted successfully" });
+      }
+    });
+  } else {
+    res.json({ message: "Image not found" });
+    console.log("hi");
+  }
+});
+
+// Get list of images
+function getImagesNames(uploadDir) {
+  fs.readdir(uploadDir, (err, files) => {
+    if (err) {
+      console.error("Error reading directory:", err);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+    imageFiles = files;
+    // res.json({ images: imageFiles });
+  });
+}
+getImagesNames("uploads/upload");
+setTimeout(() => {
+  console.log(imageFiles);
+}, 50);
 
 // Functions to access database
 function addTable(TableQuery) {
