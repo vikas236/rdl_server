@@ -4,6 +4,9 @@ require("dotenv").config();
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
+const bodyParser = require("body-parser");
+const { promisify } = require("util");
+const readdirAsync = promisify(fs.readdir);
 const pg = require("pg");
 
 const { Pool } = pg;
@@ -50,8 +53,10 @@ function determineFolderName(filename) {
 }
 
 const upload = multer({ storage: storage });
+// Increase payload size limit (default is 100kb)
+app.use(bodyParser.json({ limit: "100mb" }));
+app.use(bodyParser.urlencoded({ extended: true, limit: "5mb" }));
 let imageFiles = [];
-// console.log(upload);
 
 // Serve static files from the 'uploads' directory
 app.use(express.static("uploads"));
@@ -81,10 +86,21 @@ app.get("/get_cred", async (req, res) => {
   }
 });
 
-// get images
-app.get("/images/:imageName", (req, res) => {
-  const imageName = req.params.imageName;
-  res.sendFile(`${__dirname}/uploads/${imageName}`);
+// Route to get the contents of a folder
+app.get("/folder/:folderName", (req, res) => {
+  const folderName = req.params.folderName;
+  const folderPath = path.join(__dirname, "uploads", folderName);
+
+  // Read the contents of the folder
+  fs.readdir(folderPath, (err, files) => {
+    if (err) {
+      console.error("Error reading directory:", err);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+
+    // Send the list of files as a JSON response
+    res.json({ files: files });
+  });
 });
 
 // Middleware to parse JSON bodies
@@ -107,20 +123,113 @@ app.post("/send_cred", (req, res) => {
 });
 
 // Route to handle image upload
-app.post("/upload", upload.single("image"), (req, res) => {
-  if (!req.file) {
-    console.log("hi");
-    return res.status(400).json({ error: "No image uploaded" });
-  } else if (imageFiles.includes(req.file.filename)) {
-    return res.json({ message: "file already exists" });
+app.post("/uploadslides", async (req, res) => {
+  const base64Images = req.body.data;
+
+  if (!base64Images || base64Images.length === 0) return;
+  // Define the path to the slide folder
+  const uploadPath = path.join(__dirname, "uploads/slide");
+
+  try {
+    setImageName();
+    for (let i = 0; i < base64Images.length; i++) {
+      let base64Image = base64Images[i];
+      base64Image = base64Image.replace(/^data:image\/jpeg;base64,/, "");
+
+      // Generate the file name for the uploaded image
+      const files = await getFileNames(uploadPath);
+      const length = files.length;
+      const fileName = `slide${length}.jpg`;
+
+      // Decode base64 image data
+      const imageData = Buffer.from(base64Image, "base64");
+
+      // Write the image data to a file in the slide folder
+      await fs.promises.writeFile(path.join(uploadPath, fileName), imageData);
+    }
+
+    console.log("All images uploaded successfully");
+  } catch (error) {
+    console.error("Error uploading images:", error);
+    return res.status(500).json({ error: "Failed to upload images" });
   }
-  res.json({ message: "Image uploaded successfully" });
+});
+
+async function setImageName() {
+  const uploadPath = path.join(__dirname, "uploads/slide");
+  const files = await getFileNames(uploadPath);
+  for (let i = 0; i < files.length; i++) {
+    await renameImage(files[i], `slide${i}.jpg`, uploadPath);
+  }
+}
+
+async function getFileNames(uploadPath) {
+  try {
+    const files = await readdirAsync(uploadPath);
+    return files;
+  } catch (err) {
+    console.error("Error reading directory:", err);
+    return [];
+  }
+}
+
+async function renameImage(oldName, newName, folderPath) {
+  // Construct the paths for the old and new image names
+  const oldPath = path.join(folderPath, oldName);
+  const newPath = path.join(folderPath, newName);
+
+  // Rename the image file
+  await new Promise((resolve, reject) => {
+    fs.rename(oldPath, newPath, (err) => {
+      if (err) {
+        console.error("Error renaming image:", err);
+        reject(err);
+      } else {
+        resolve();
+      }
+    });
+  });
+}
+
+app.post("/uploadgallery", async (req, res) => {
+  const [names, base64Images] = req.body.data;
+
+  if (!base64Images || base64Images.length === 0) return;
+  // Define the path to the slide folder
+  const uploadPath = path.join(__dirname, "uploads/gallery");
+  // create gallery folder it does not exist
+  if (!fs.existsSync(uploadPath)) fs.mkdirSync(uploadPath);
+
+  try {
+    for (let i = 0; i < base64Images.length; i++) {
+      const filename = `${names[i]}.png`;
+      let base64Image = base64Images[i];
+
+      if (base64Image.length > 50) {
+        base64Image = base64Image.replace(/^data:image\/png;base64,/, "");
+        // Decode base64 image data
+        const imageData = Buffer.from(base64Image, "base64");
+        // Write the image data to a file in the slide folder
+        await fs.promises.writeFile(path.join(uploadPath, filename), imageData);
+      } else {
+        const originalname =
+          decodeURIComponent(base64Image).match(/\/([^\/]+)$/)[1];
+        renameImage(originalname, filename, uploadPath);
+      }
+    }
+
+    console.log("gallery images updated successfully");
+    // getFileNames(uploadPath).then((r) => console.log(r));
+  } catch (error) {
+    console.error("Error uploading images:", error);
+    return res.status(500).json({ error: "Failed to upload images" });
+  }
 });
 
 // Route to handle deletion of images
 app.delete("/images/:filename", (req, res) => {
   const filename = req.params.filename;
-  const uploadDirectory = `uploads/${determineFolderName(filename)}`;
+  const uploadDirectory = `uploads/product`;
   const filePath = path.join(uploadDirectory, filename);
 
   // Check if the file exists
@@ -133,29 +242,78 @@ app.delete("/images/:filename", (req, res) => {
       } else {
         console.log("Image deleted successfully");
         res.json({ message: "Image deleted successfully" });
+        const uploadPath = path.join(__dirname, "uploads/slide");
+        getFileNames(uploadPath).then((files) => console.log(files));
       }
     });
   } else {
     res.json({ message: "Image not found" });
-    console.log("hi");
   }
 });
 
-// Get list of images
-function getImagesNames(uploadDir) {
-  fs.readdir(uploadDir, (err, files) => {
+// Route to handle deletion of images
+app.delete("/deletegi/:filename", (req, res) => {
+  const filename = req.params.filename;
+  const uploadDirectory = `uploads/gallery`;
+  const filePath = path.join(uploadDirectory, filename);
+
+  // Check if the file exists
+  if (fs.existsSync(filePath)) {
+    // Delete the file
+    fs.unlink(filePath, (err) => {
+      if (err) {
+        console.error("Error deleting image:", err);
+        res.status(500).json({ error: "Failed to delete image" });
+      } else {
+        console.log("Image deleted successfully");
+        res.json({ message: "Image deleted successfully" });
+        const uploadPath = path.join(__dirname, "uploads/gallery");
+        getFileNames(uploadPath).then((files) => console.log(files));
+      }
+    });
+  } else {
+    res.json({ message: "Image not found" });
+    console.log("image not found");
+  }
+});
+
+app.post("/send_bestseller", (req, res) => {
+  const dataArray = req.body;
+
+  // Create the folder if it doesn't exist
+  const folderPath = path.join(__dirname, "uploads", "bestseller");
+  if (!fs.existsSync(folderPath)) {
+    fs.mkdirSync(folderPath, { recursive: true });
+  }
+
+  // Write the array data to a file in the folder
+  const filePath = path.join(folderPath, "data.json");
+  fs.writeFile(filePath, JSON.stringify(dataArray), (err) => {
     if (err) {
-      console.error("Error reading directory:", err);
-      return res.status(500).json({ error: "Internal server error" });
+      console.error("Error writing array data to file:", err);
+      return res.status(500).json({ error: "Failed to upload array" });
     }
-    imageFiles = files;
-    // res.json({ images: imageFiles });
+    console.log("Array uploaded successfully");
+    res.json({ message: "Array uploaded successfully" });
   });
-}
-getImagesNames("uploads/upload");
-setTimeout(() => {
-  console.log(imageFiles);
-}, 50);
+});
+
+// Route to handle GET request for get bestsellers file
+app.get("/get_bestseller", (req, res) => {
+  // Define the directory path where the JSON file is located
+  const folderPath = path.join(__dirname, "uploads", "bestseller");
+  try {
+    // Read the JSON file synchronously
+    const jsonData = fs.readFileSync(
+      path.join(folderPath, "data.json"),
+      "utf-8"
+    );
+    res.json(JSON.parse(jsonData)); // Send the JSON data as response
+  } catch (error) {
+    console.error("Error reading JSON file:", error);
+    res.status(500).json({ error: "Failed to read JSON file" });
+  }
+});
 
 // Functions to access database
 function addTable(TableQuery) {
