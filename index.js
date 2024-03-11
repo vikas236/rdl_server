@@ -377,7 +377,7 @@ async function updateData(objects) {
 
     // Insert data into the table
     const result = await pool.query(insertQuery, values);
-    console.log("Data inserted successfully:", result);
+    console.log("Data inserted successfully:");
   } catch (error) {
     console.error("Error inserting data:", error);
     throw error; // Re-throw the error to be handled by the caller
