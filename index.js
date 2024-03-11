@@ -277,41 +277,51 @@ app.delete("/deletegi/:filename", (req, res) => {
   }
 });
 
-app.post("/send_bestseller", (req, res) => {
+app.post("/send_bestseller", async (req, res) => {
   const dataArray = req.body;
 
-  // Create the folder if it doesn't exist
-  const folderPath = path.join(__dirname, "uploads", "bestseller");
-  if (!fs.existsSync(folderPath)) {
-    fs.mkdirSync(folderPath, { recursive: true });
-  }
+  // Construct the SQL UPDATE statement
+  const updateQuery = `
+    UPDATE bestseller
+    SET "0" = $1,
+        "1" = $2,
+        "2" = $3,
+        "3" = $4`;
 
-  // Write the array data to a file in the folder
-  const filePath = path.join(folderPath, "data.json");
-  fs.writeFile(filePath, JSON.stringify(dataArray), (err) => {
-    if (err) {
-      console.error("Error writing array data to file:", err);
-      return res.status(500).json({ error: "Failed to upload array" });
-    }
-    console.log("Array uploaded successfully");
-    res.json({ message: "Array uploaded successfully" });
-  });
+  try {
+    // Execute the SQL UPDATE statement with the provided data array
+    const result = await pool.query(updateQuery, [
+      dataArray[0],
+      dataArray[1],
+      dataArray[2],
+      dataArray[3],
+    ]);
+
+    console.log("Updated successfully");
+    res.sendStatus(200); // Respond with HTTP status 200 OK
+  } catch (error) {
+    console.error("Error executing query", error);
+    res.status(500).send("Internal Server Error"); // Respond with HTTP status 500 Internal Server Error
+  }
 });
 
 // Route to handle GET request for get bestsellers file
-app.get("/get_bestseller", (req, res) => {
-  // Define the directory path where the JSON file is located
-  const folderPath = path.join(__dirname, "uploads", "bestseller");
+app.get("/get_bestseller", async (req, res) => {
   try {
-    // Read the JSON file synchronously
-    const jsonData = fs.readFileSync(
-      path.join(folderPath, "data.json"),
-      "utf-8"
-    );
-    res.json(JSON.parse(jsonData)); // Send the JSON data as response
+    // Construct the SQL SELECT statement
+    const selectQuery = 'SELECT "0", "1", "2", "3" FROM bestseller;';
+
+    // Execute the SQL SELECT statement
+    const result = await pool.query(selectQuery);
+
+    // Extract the rows from the result
+    const rows = result.rows;
+
+    // Send the rows as the response
+    res.json(rows);
   } catch (error) {
-    console.error("Error reading JSON file:", error);
-    res.status(500).json({ error: "Failed to read JSON file" });
+    console.error("Error executing query", error);
+    res.status(500).send("Internal Server Error"); // Respond with HTTP status 500 Internal Server Error
   }
 });
 
