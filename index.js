@@ -202,11 +202,11 @@ app.post("/uploadgallery", async (req, res) => {
 
   try {
     for (let i = 0; i < base64Images.length; i++) {
-      const filename = `${names[i]}.jpg`;
+      const filename = `${names[i]}.png`;
       let base64Image = base64Images[i];
 
       if (base64Image.length > 50) {
-        base64Image = base64Image.replace(/^data:image\/jpg;base64,/, "");
+        base64Image = base64Image.replace(/^data:image\/png;base64,/, "");
         // Decode base64 image data
         const imageData = Buffer.from(base64Image, "base64");
         // Write the image data to a file in the slide folder
