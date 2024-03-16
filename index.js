@@ -202,11 +202,11 @@ app.post("/uploadgallery", async (req, res) => {
 
   try {
     for (let i = 0; i < base64Images.length; i++) {
-      const filename = `${names[i]}.png`;
+      const filename = `${names[i]}.jpg`;
       let base64Image = base64Images[i];
 
       if (base64Image.length > 50) {
-        base64Image = base64Image.replace(/^data:image\/png;base64,/, "");
+        base64Image = base64Image.replace(/^data:image\/jpg;base64,/, "");
         // Decode base64 image data
         const imageData = Buffer.from(base64Image, "base64");
         // Write the image data to a file in the slide folder
@@ -219,7 +219,7 @@ app.post("/uploadgallery", async (req, res) => {
     }
 
     console.log("gallery images updated successfully");
-    // getFileNames(uploadPath).then((r) => console.log(r));
+    getFileNames(uploadPath).then((r) => console.log(r));
   } catch (error) {
     console.error("Error uploading images:", error);
     return res.status(500).json({ error: "Failed to upload images" });
@@ -268,7 +268,6 @@ app.delete("/deletegi/:filename", (req, res) => {
         console.log("Image deleted successfully");
         res.json({ message: "Image deleted successfully" });
         const uploadPath = path.join(__dirname, "uploads/gallery");
-        getFileNames(uploadPath).then((files) => console.log(files));
       }
     });
   } else {
