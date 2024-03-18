@@ -202,7 +202,7 @@ app.post("/uploadgallery", async (req, res) => {
 
   try {
     for (let i = 0; i < base64Images.length; i++) {
-      const filename = `${names[i]}.jpg`;
+      const filename = `${names[i].replace(" ", "_")}.jpg`;
       let base64Image = base64Images[i];
 
       if (base64Image.length > 50) {
