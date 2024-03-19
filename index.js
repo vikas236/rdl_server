@@ -221,7 +221,7 @@ app.post("/uploadgallery", async (req, res) => {
     console.log("gallery images updated successfully");
     getFileNames(uploadPath).then((r) => console.log(r));
   } catch (error) {
-    console.error("Error uploading images:", error);
+    return res.json(error);
     return res.status(500).json({ error: "Failed to upload images" });
   }
 });
