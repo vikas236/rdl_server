@@ -125,33 +125,48 @@ app.post("/send_cred", (req, res) => {
 // Route to handle image upload
 app.post("/uploadslides", async (req, res) => {
   const base64Images = req.body.data;
-
   if (!base64Images || base64Images.length === 0) return;
-  // Define the path to the slide folder
-  const uploadPath = path.join(__dirname, "uploads/slide");
+  console.log("hi");
 
   try {
-    setImageName();
+    clearTable("slideimages");
     for (let i = 0; i < base64Images.length; i++) {
+      const name = `slide${i}.jpg`;
       let base64Image = base64Images[i];
-      base64Image = base64Image.replace(/^data:image\/jpeg;base64,/, "");
 
-      // Generate the file name for the uploaded image
-      const files = await getFileNames(uploadPath);
-      const length = files.length;
-      const fileName = `slide${length}.jpg`;
-
-      // Decode base64 image data
-      const imageData = Buffer.from(base64Image, "base64");
-
-      // Write the image data to a file in the slide folder
-      await fs.promises.writeFile(path.join(uploadPath, fileName), imageData);
+      if (base64Image.length) {
+        base64Image = base64Image.replace(/^data:image\/jpeg;base64,/, "");
+        // Decode base64 image data
+        const imageData = Buffer.from(base64Image, "base64");
+        // Write the image data to database
+        const query = "INSERT INTO slideimages (name, data) VALUES ($1, $2)";
+        await pool.query(query, [name, imageData]);
+        console.log("Image inserted successfully");
+      }
     }
 
-    console.log("All images uploaded successfully");
+    console.log("Slide images updated successfully");
+    res.status(200).json({ message: "Slide images updated successfully" });
   } catch (error) {
-    console.error("Error uploading images:", error);
+    console.log(error);
     return res.status(500).json({ error: "Failed to upload images" });
+  }
+});
+
+// get gallery images
+app.get("/getslides", async (req, res) => {
+  try {
+    const query = "SELECT name, data FROM slideimages";
+    const result = await pool.query(query);
+    const images = result.rows.map(({ name, data }) => ({
+      name,
+      base64ImageData: Buffer.from(data).toString("base64"),
+    }));
+    // console.log(images);
+    res.json(images);
+  } catch (error) {
+    console.error("Error retrieving images:", error);
+    res.status(500).json({ error: "Failed to retrieve images" });
   }
 });
 
@@ -193,12 +208,7 @@ async function renameImage(oldName, newName, folderPath) {
 
 app.post("/uploadgallery", async (req, res) => {
   const [names, base64Images] = req.body.data;
-
   if (!base64Images || base64Images.length === 0) return;
-  // Define the path to the slide folder
-  const uploadPath = path.join(__dirname, "uploads/gallery");
-  // create gallery folder it does not exist
-  if (!fs.existsSync(uploadPath)) fs.mkdirSync(uploadPath);
 
   try {
     clearTable("gimages");
@@ -213,7 +223,6 @@ app.post("/uploadgallery", async (req, res) => {
         // Write the image data to database
         const query = "INSERT INTO gimages (name, data) VALUES ($1, $2)";
         await pool.query(query, [name, imageData]);
-        console.log(imageData);
         console.log("Image inserted successfully");
       }
     }
@@ -235,7 +244,6 @@ app.get("/getgallery", async (req, res) => {
       name,
       base64ImageData: Buffer.from(data).toString("base64"),
     }));
-    // console.log(images);
     res.json(images);
   } catch (error) {
     console.error("Error retrieving images:", error);
