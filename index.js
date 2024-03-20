@@ -110,7 +110,7 @@ app.use(express.json());
 app.post("/send_data", (req, res) => {
   // Access the JSON data sent from the client
   const objects = req.body;
-  updateData(objects);
+  updateData(objects, "menu");
   res.json({ message: "Data received successfully" });
 });
 
@@ -118,7 +118,7 @@ app.post("/send_data", (req, res) => {
 app.post("/send_cred", (req, res) => {
   // Access the JSON data sent from the client
   const objects = req.body;
-  updateData(objects);
+  updateData(objects, "login_credentials");
   res.json({ message: "Data received successfully" });
 });
 
@@ -201,28 +201,45 @@ app.post("/uploadgallery", async (req, res) => {
   if (!fs.existsSync(uploadPath)) fs.mkdirSync(uploadPath);
 
   try {
+    clearTable("gimages");
     for (let i = 0; i < base64Images.length; i++) {
-      const filename = `${names[i]}.jpg`;
+      const name = `${names[i]}.jpg`;
       let base64Image = base64Images[i];
 
-      if (base64Image.length > 50) {
+      if (base64Image.length) {
         base64Image = base64Image.replace(/^data:image\/jpeg;base64,/, "");
         // Decode base64 image data
         const imageData = Buffer.from(base64Image, "base64");
-        // Write the image data to a file in the slide folder
-        await fs.promises.writeFile(path.join(uploadPath, filename), imageData);
-      } else {
-        const originalname =
-          decodeURIComponent(base64Image).match(/\/([^\/]+)$/)[1];
-        renameImage(originalname, filename, uploadPath);
+        // Write the image data to database
+        const query = "INSERT INTO gimages (name, data) VALUES ($1, $2)";
+        await pool.query(query, [name, imageData]);
+        console.log(imageData);
+        console.log("Image inserted successfully");
       }
     }
 
-    // console.log("gallery images updated successfully");
-    // getFileNames(uploadPath).then((r) => console.log(r));
+    console.log("gallery images updated successfully");
+    res.status(200).json({ message: "Gallery images updated successfully" });
   } catch (error) {
-    return res.json(error);
+    console.log(error);
     return res.status(500).json({ error: "Failed to upload images" });
+  }
+});
+
+// get gallery images
+app.get("/getgallery", async (req, res) => {
+  try {
+    const query = "SELECT name, data FROM gimages";
+    const result = await pool.query(query);
+    const images = result.rows.map(({ name, data }) => ({
+      name,
+      base64ImageData: Buffer.from(data).toString("base64"),
+    }));
+    // console.log(images);
+    res.json(images);
+  } catch (error) {
+    console.error("Error retrieving images:", error);
+    res.status(500).json({ error: "Failed to retrieve images" });
   }
 });
 
@@ -365,10 +382,10 @@ function dropTable(TableQuery) {
   });
 }
 
-async function updateData(objects) {
+async function updateData(objects, name) {
   try {
     // Clear the table
-    await clearTable();
+    await clearTable(name);
 
     // Define the SQL statement for the insert query
     const insertQuery = `
@@ -393,9 +410,9 @@ async function updateData(objects) {
   }
 }
 
-function clearTable() {
+function clearTable(name) {
   return new Promise((resolve, reject) => {
-    const truncateQuery = `TRUNCATE TABLE menu`;
+    const truncateQuery = `TRUNCATE TABLE ${name}`;
 
     // Execute the query to clear the table
     pool.query(truncateQuery, (err, result) => {
