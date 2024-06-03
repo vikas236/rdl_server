@@ -12,7 +12,7 @@ const pg = require("pg");
 const { Pool } = pg;
 
 const pool = new Pool({
-  connectionString: process.env.POSTGRES_URL,
+  connectionString: "postgres://default:1eQyKahT3IDs@ep-flat-feather-a4ptshbs-pooler.us-east-1.aws.neon.tech:5432/verceldb?sslmode=require",
 });
 
 // Middleware to enable CORS
